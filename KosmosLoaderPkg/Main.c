@@ -264,18 +264,18 @@ EFI_STATUS EFIAPI UefiMain(
   }
   // #@@range_end(exit_bs)
 
-  // #@@range_begin(call_kernel)
   UINT64 entry_addr = *(UINT64*)(kernel_base_addr + 24);
 
-  typedef void EntryPointType(void);
+  // #@@range_begin(call_kernel)
+  typedef void EntryPointType(UINT64, UINT64);
   EntryPointType* entry_point = (EntryPointType*)entry_addr;
-  entry_point();
+  entry_point(gop->Mode->FrameBufferBase, gop->Mode->FrameBufferSize);
   // #@@range_end(call_kernel)
+
   // #@@range_end(main)
 
   Print(L"All done\n");
 
-  while (1)
-    ;
+  while (1);
   return EFI_SUCCESS;
 }
