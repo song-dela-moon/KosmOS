@@ -1,0 +1,8 @@
+*.o
+*.d
+*.bin
+*.elf
+*.swp
+
+/*.bin
+/*.elf
