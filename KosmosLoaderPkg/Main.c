@@ -297,7 +297,7 @@ EFI_STATUS EFIAPI UefiMain(
 
   UINT64 entry_addr = *(UINT64*)(kernel_base_addr + 24);
 
-  typedef void EntryPointType(UINT64, UINT64);
+  typedef void __attribute__((sysv_abi)) EntryPointType(UINT64, UINT64);
   EntryPointType* entry_point = (EntryPointType*)entry_addr;
   entry_point(gop->Mode->FrameBufferBase, gop->Mode->FrameBufferSize);
 
