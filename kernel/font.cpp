@@ -20,7 +20,6 @@ const uint8_t* GetFont(char c) {
 }
 // #@@range_end(font_text_bin)
 
-// #@@range_begin(write_ascii)
 void WriteAscii(PixelWriter& writer, int x, int y, char c, const PixelColor& color) {
   const uint8_t* font = GetFont(c);
   if (font == nullptr) {
@@ -34,4 +33,11 @@ void WriteAscii(PixelWriter& writer, int x, int y, char c, const PixelColor& col
     }
   }
 }
-// #@@range_end(write_ascii)
+
+// #@@range_begin(write_string)
+void WriteString(PixelWriter& writer, int x, int y, const char* s, const PixelColor& color) {
+  for (int i = 0; s[i] != '\0'; ++i) {
+    WriteAscii(writer, x + 8 * i, y, s[i], color);
+  }
+}
+// #@@range_end(write_string)
