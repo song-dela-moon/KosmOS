@@ -8,16 +8,11 @@
 #include "graphics.hpp"
 #include "font.hpp"
 #include "console.hpp"
+#include "pci.hpp"
 // #@@range_end(includes)
-
-// #@@range_begin(placement_new)
-void* operator new(size_t size, void* buf) {
-  return buf;
-}
 
 void operator delete(void* obj) noexcept {
 }
-// #@@range_end(placement_new)
 
 const PixelColor kDesktopBGColor{42, 42, 42};
 const PixelColor kDesktopFGColor{0, 240, 0};
@@ -127,6 +122,19 @@ extern "C" void KernelMain(const FrameBufferConfig& frame_buffer_config) {
     }
   }
   // #@@range_end(draw_mouse_cursor)
+  // #@@range_begin(show_devices)
+  auto err = pci::ScanAllBus();
+  printk("ScanAllBus: %s\n", err.Name());
+
+  for (int i = 0; i < pci::num_device; ++i) {
+    const auto& dev = pci::devices[i];
+    auto vendor_id = pci::ReadVendorId(dev.bus, dev.device, dev.function);
+    auto class_code = pci::ReadClassCode(dev.bus, dev.device, dev.function);
+    printk("%d.%d.%d: vend %04x, class %08x, head %02x\n",
+        dev.bus, dev.device, dev.function,
+        vendor_id, class_code, dev.header_type);
+  }
+  // #@@range_end(show_devices)
 
   while (1) __asm__("hlt");
 }
