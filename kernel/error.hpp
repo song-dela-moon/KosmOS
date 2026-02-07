@@ -26,6 +26,7 @@ class Error {
     kInvalidPhase,
     kUnknownXHCISpeedID,
     kNoWaiter,
+    kNoPCIMSI,
     kLastOfCode,  // This enumerator must always be placed last
   };
 
@@ -51,6 +52,7 @@ class Error {
     "kInvalidPhase",
     "kUnknownXHCISpeedID",
     "kNoWaiter",
+    "kNoPCIMSI",
   };
   static_assert(Error::Code::kLastOfCode == code_names_.size());
 

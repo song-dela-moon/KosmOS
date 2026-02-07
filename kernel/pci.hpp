@@ -67,7 +67,7 @@ namespace pci {
 
   /** @brief Reads the specified 32-bit register of a PCI device */
   uint32_t ReadConfReg(const Device& dev, uint8_t reg_addr);
-
+  /** @brief Writes to the specified 32-bit register of the PCI device */
   void WriteConfReg(const Device& dev, uint8_t reg_addr, uint32_t value);
 
   /** @brief Reads the Bus Numbers register (for Header Type 1)
@@ -98,4 +98,80 @@ namespace pci {
   }
 
   WithError<uint64_t> ReadBar(Device& device, unsigned int bar_index);
+
+  /** @brief Common header for PCI capability registers */
+  union CapabilityHeader {
+    uint32_t data;
+    struct {
+      uint32_t cap_id : 8;
+      uint32_t next_ptr : 8;
+      uint32_t cap : 16;
+    } __attribute__((packed)) bits;
+  } __attribute__((packed));
+
+  const uint8_t kCapabilityMSI = 0x05;
+  const uint8_t kCapabilityMSIX = 0x11;
+
+  /** @brief Reads the specified capability register of the specified PCI device
+   *
+   * @param dev  PCI device from which to read the capability
+   * @param addr  Configuration space address of the capability register
+   */
+  CapabilityHeader ReadCapabilityHeader(const Device& dev, uint8_t addr);
+
+  /** @brief MSI capability structure
+   *
+   * The MSI capability structure has many variants depending on 64-bit support etc.
+   * This struct defines members to match the largest variant to support all variants.
+   */
+  struct MSICapability {
+    union {
+      uint32_t data;
+      struct {
+        uint32_t cap_id : 8;
+        uint32_t next_ptr : 8;
+        uint32_t msi_enable : 1;
+        uint32_t multi_msg_capable : 3;
+        uint32_t multi_msg_enable : 3;
+        uint32_t addr_64_capable : 1;
+        uint32_t per_vector_mask_capable : 1;
+        uint32_t : 7;
+      } __attribute__((packed)) bits;
+    } __attribute__((packed)) header ;
+
+    uint32_t msg_addr;
+    uint32_t msg_upper_addr;
+    uint32_t msg_data;
+    uint32_t mask_bits;
+    uint32_t pending_bits;
+  } __attribute__((packed));
+
+  /** @brief Configures MSI or MSI-X interrupt
+   *
+   * @param dev  Target PCI device to configure
+   * @param msg_addr  Address to write message to when interrupt occurs
+   * @param msg_data  Message value to write when interrupt occurs
+   * @param num_vector_exponent  Number of vectors to allocate (specify n for 2^n)
+   */
+  Error ConfigureMSI(const Device& dev, uint32_t msg_addr, uint32_t msg_data,
+                     unsigned int num_vector_exponent);
+
+  enum class MSITriggerMode {
+    kEdge = 0,
+    kLevel = 1
+  };
+
+  enum class MSIDeliveryMode {
+    kFixed          = 0b000,
+    kLowestPriority = 0b001,
+    kSMI            = 0b010,
+    kNMI            = 0b100,
+    kINIT           = 0b101,
+    kExtINT         = 0b111,
+  };
+
+  Error ConfigureMSIFixedDestination(
+      const Device& dev, uint8_t apic_id,
+      MSITriggerMode trigger_mode, MSIDeliveryMode delivery_mode,
+      uint8_t vector, unsigned int num_vector_exponent);
 }
