@@ -26,10 +26,9 @@
 #include "segment.hpp"
 #include "paging.hpp"
 #include "memory_manager.hpp"
+#include "window.hpp"
+#include "layer.hpp"
 // #@@range_end(includes)
-
-const PixelColor kDesktopBGColor{42, 42, 42};
-const PixelColor kDesktopFGColor{0, 240, 0};
 
 char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
 PixelWriter* pixel_writer;
@@ -59,14 +58,14 @@ char memory_manager_buf[sizeof(BitmapMemoryManager)];
 BitmapMemoryManager* memory_manager;
 // #@@range_end(memman_buf)
 
-// #@@range_begin(mouse_observer)
-char mouse_cursor_buf[sizeof(MouseCursor)];
-MouseCursor* mouse_cursor;
+// #@@range_begin(layermgr_mousehandler)
+unsigned int mouse_layer_id;
 
 void MouseObserver(int8_t displacement_x, int8_t displacement_y) {
-  mouse_cursor->MoveRelative({displacement_x, displacement_y});
+  layer_manager->MoveRelative(mouse_layer_id, {displacement_x, displacement_y});
+  layer_manager->Draw();
 }
-// #@@range_end(mouse_observer)
+// #@@range_end(layermgr_mousehandler)
 
 // #@@range_begin(switch_echi2xhci)
 void SwitchEhci2Xhci(const pci::Device& xhc_dev) {
@@ -129,22 +128,13 @@ extern "C" void KernelMainNewStack(
       break;
   }
 
-  const int kFrameWidth = frame_buffer_config.horizontal_resolution;
-  const int kFrameHeight = frame_buffer_config.vertical_resolution;
-
-  // #@@range_begin(draw_desktop)
-    FillRectangle(*pixel_writer,
-        {0, 0},
-        {kFrameWidth, kFrameHeight - 30},
-        kDesktopBGColor);
-    FillRectangle(*pixel_writer,
-        {0, kFrameHeight - 30},
-        {kFrameWidth, 30},
-        {1, 1, 1});
-
+  // #@@range_begin(new_console)
+  DrawDesktop(*pixel_writer);
   console = new(console_buf) Console{
-    *pixel_writer, kDesktopFGColor, kDesktopBGColor
+    kDesktopFGColor, kDesktopBGColor
   };
+  console->SetWriter(pixel_writer);
+  SetLogLevel(kWarn);
     printk("Welcome to KosmOS!\n");
     printk(" /$$   /$$                                    /$$$$$$   /$$$$$$ \n");
     printk("| $$  /$$/                                   /$$__  $$ /$$__  $$\n");
@@ -154,7 +144,7 @@ extern "C" void KernelMainNewStack(
     printk("| $$:  $$ | $$  | $$ :____  $$| $$ | $$ | $$| $$  | $$ /$$  : $$\n");
     printk("| $$ :  $$|  $$$$$$/ /$$$$$$$/| $$ | $$ | $$|  $$$$$$/|  $$$$$$/\n");
     printk("|__/  :__/ :______/ |_______/ |__/ |__/ |__/ :______/  :______/ \n");
-  // #@@range_end(draw_desktop)
+  // #@@range_end(new_console)
   SetLogLevel(kWarn);
 
   SetupSegments();
@@ -194,11 +184,15 @@ extern "C" void KernelMainNewStack(
   memory_manager->SetMemoryRange(FrameID{1}, FrameID{available_end / kBytesPerFrame});
   // #@@range_end(mark_allocated)
 
-  // #@@range_begin(new_mouse_cursor)
-  mouse_cursor = new(mouse_cursor_buf) MouseCursor{
-    pixel_writer, kDesktopBGColor, {300, 200}
-  };
-  // #@@range_end(new_mouse_cursor)
+  // #@@range_begin(initialize_heap)
+  memory_manager->SetMemoryRange(FrameID{1}, FrameID{available_end / kBytesPerFrame});
+
+  if (auto err = InitializeHeap(*memory_manager)) {
+    Log(kError, "failed to allocate pages: %s at %s:%d\n",
+        err.Name(), err.File(), err.Line());
+    exit(1);
+  }
+  // #@@range_end(initialize_heap)
 
   std::array<Message, 32> main_queue_data;
   ArrayQueue<Message> main_queue{main_queue_data};
@@ -292,6 +286,38 @@ extern "C" void KernelMainNewStack(
     }
   }
   // #@@range_end(configure_port)
+
+  // #@@range_begin(main_window)
+  const int kFrameWidth = frame_buffer_config.horizontal_resolution;
+  const int kFrameHeight = frame_buffer_config.vertical_resolution;
+
+  auto bgwindow = std::make_shared<Window>(kFrameWidth, kFrameHeight);
+  auto bgwriter = bgwindow->Writer();
+
+  DrawDesktop(*bgwriter);
+  console->SetWriter(bgwriter);
+
+  auto mouse_window = std::make_shared<Window>(
+      kMouseCursorWidth, kMouseCursorHeight);
+  mouse_window->SetTransparentColor(kMouseTransparentColor);
+  DrawMouseCursor(mouse_window->Writer(), {0, 0});
+
+  layer_manager = new LayerManager;
+  layer_manager->SetWriter(pixel_writer);
+
+  auto bglayer_id = layer_manager->NewLayer()
+    .SetWindow(bgwindow)
+    .Move({0, 0})
+    .ID();
+  mouse_layer_id = layer_manager->NewLayer()
+    .SetWindow(mouse_window)
+    .Move({200, 200})
+    .ID();
+
+  layer_manager->UpDown(bglayer_id, 0);
+  layer_manager->UpDown(mouse_layer_id, 1);
+  layer_manager->Draw();
+  // #@@range_end(main_window)
 
   // #@@range_begin(event_loop)
   while (true) {
