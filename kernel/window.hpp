@@ -67,6 +67,13 @@ class Window {
   /** @brief Returns the height of the drawing region in pixels. */
   int Height() const;
 
+  /** @brief Moves a rectangular region within this window's drawing area.
+   *
+   * @param dst_pos  Origin of the destination position.
+   * @param src      Source rectangle (position and size).
+   */
+  void Move(Vector2D<int> dst_pos, const Rectangle<int>& src);
+
   // #@@range_begin(fields)
  private:
   int width_, height_;

@@ -42,7 +42,6 @@ char console_buf[sizeof(Console)];
 Console* console;
 // #@@range_end(console_buf)
 
-// #@@range_begin(measure_printk)
 int printk(const char* format, ...) {
   va_list ap;
   int result;
@@ -61,7 +60,6 @@ int printk(const char* format, ...) {
   console->PutString(s);
   return result;
 }
-// #@@range_end(measure_printk)
 
 // #@@range_begin(memman_buf)
 char memory_manager_buf[sizeof(BitmapMemoryManager)];
@@ -311,8 +309,10 @@ extern "C" void KernelMainNewStack(
       kFrameWidth, kFrameHeight, frame_buffer_config.pixel_format);
   auto bgwriter = bgwindow->Writer();
 
+  // #@@range_begin(set_window)
   DrawDesktop(*bgwriter);
-  console->SetWriter(bgwriter);
+  console->SetWindow(bgwindow);
+  // #@@range_end(set_window)
 
   auto mouse_window = std::make_shared<Window>(
       kMouseCursorWidth, kMouseCursorHeight, frame_buffer_config.pixel_format);
