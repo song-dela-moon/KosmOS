@@ -42,7 +42,7 @@ char console_buf[sizeof(Console)];
 Console* console;
 // #@@range_end(console_buf)
 
-// #@@range_begin(printk)
+// #@@range_begin(measure_printk)
 int printk(const char* format, ...) {
   va_list ap;
   int result;
@@ -52,10 +52,16 @@ int printk(const char* format, ...) {
   result = vsprintf(s, format, ap);
   va_end(ap);
 
+  StartLAPICTimer();
+  console->PutString(s);
+  auto elapsed = LAPICTimerElapsed();
+  StopLAPICTimer();
+
+  sprintf(s, "[%9d]", elapsed);
   console->PutString(s);
   return result;
 }
-// #@@range_end(printk)
+// #@@range_end(measure_printk)
 
 // #@@range_begin(memman_buf)
 char memory_manager_buf[sizeof(BitmapMemoryManager)];
