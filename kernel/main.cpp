@@ -28,7 +28,10 @@
 #include "memory_manager.hpp"
 #include "window.hpp"
 #include "layer.hpp"
+// #@@range_begin(include_timer)
 #include "timer.hpp"
+// #@@range_end(include_timer)
+#include "frame_buffer.hpp"
 // #@@range_end(includes)
 
 char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
@@ -150,8 +153,10 @@ extern "C" void KernelMainNewStack(
     printk("| $$ :  $$|  $$$$$$/ /$$$$$$$/| $$ | $$ | $$|  $$$$$$/|  $$$$$$/\n");
     printk("|__/  :__/ :______/ |_______/ |__/ |__/ |__/ :______/  :______/ \n");
   // #@@range_end(new_console)
+  // #@@range_begin(initialize_lapic_timer)
   SetLogLevel(kWarn);
   InitializeLAPICTimer();
+  // #@@range_end(initialize_lapic_timer)
   SetupSegments();
 
   const uint16_t kernel_cs = 1 << 3;
@@ -296,19 +301,28 @@ extern "C" void KernelMainNewStack(
   const int kFrameWidth = frame_buffer_config.horizontal_resolution;
   const int kFrameHeight = frame_buffer_config.vertical_resolution;
 
-  auto bgwindow = std::make_shared<Window>(kFrameWidth, kFrameHeight);
+  auto bgwindow = std::make_shared<Window>(
+      kFrameWidth, kFrameHeight, frame_buffer_config.pixel_format);
   auto bgwriter = bgwindow->Writer();
 
   DrawDesktop(*bgwriter);
   console->SetWriter(bgwriter);
 
   auto mouse_window = std::make_shared<Window>(
-      kMouseCursorWidth, kMouseCursorHeight);
+      kMouseCursorWidth, kMouseCursorHeight, frame_buffer_config.pixel_format);
   mouse_window->SetTransparentColor(kMouseTransparentColor);
   DrawMouseCursor(mouse_window->Writer(), {0, 0});
 
+  // #@@range_begin(create_screen)
+  FrameBuffer screen;
+  if (auto err = screen.Initialize(frame_buffer_config)) {
+    Log(kError, "failed to initialize frame buffer: %s at %s:%d\n",
+        err.Name(), err.File(), err.Line());
+  }
+
   layer_manager = new LayerManager;
-  layer_manager->SetWriter(pixel_writer);
+  layer_manager->SetWriter(&screen);
+  // #@@range_end(create_screen)
 
   auto bglayer_id = layer_manager->NewLayer()
     .SetWindow(bgwindow)

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "graphics.hpp"
+#include "frame_buffer.hpp"
 #include "window.hpp"
 
 /** @brief Layer represents a single layer.
@@ -36,8 +37,8 @@ class Layer {
   /** @brief Updates the layer position by the specified relative offset. Does not redraw. */
   Layer& MoveRelative(Vector2D<int> pos_diff);
 
-  /** @brief Draws the content of the currently set window to the given writer. */
-  void DrawTo(PixelWriter& writer) const;
+  /** @brief Draws the content of the currently set window to the given target. */
+  void DrawTo(FrameBuffer& screen) const;
 
  private:
   unsigned int id_;
@@ -51,7 +52,7 @@ class Layer {
 class LayerManager {
  public:
   /** @brief Sets the render target used by Draw and related methods. */
-  void SetWriter(PixelWriter* writer);
+  void SetWriter(FrameBuffer* screen);
   /** @brief Creates a new layer and returns a reference to it.
    *
    * The actual layer object is stored in an internal container of LayerManager.
@@ -76,11 +77,13 @@ class LayerManager {
   /** @brief Hides the specified layer. */
   void Hide(unsigned int id);
 
+  // #@@range_begin(layermgr_fields)
  private:
-  PixelWriter* writer_{nullptr};
+  FrameBuffer* screen_{nullptr};
   std::vector<std::unique_ptr<Layer>> layers_{};
   std::vector<Layer*> layer_stack_{};
   unsigned int latest_id_{0};
+  // #@@range_end(layermgr_fields)
 
   Layer* FindLayer(unsigned int id);
 };
