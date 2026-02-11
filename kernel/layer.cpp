@@ -36,20 +36,15 @@ Layer& Layer::MoveRelative(Vector2D<int> pos_diff) {
 }
 // #@@range_end(layer_move)
 
-// #@@range_begin(layer_drawto)
 void Layer::DrawTo(FrameBuffer& screen) const {
   if (window_) {
     window_->DrawTo(screen, pos_);
   }
 }
-// #@@range_end(layer_drawto)
 
-
-// #@@range_begin(layermgr_setwriter)
 void LayerManager::SetWriter(FrameBuffer* screen) {
   screen_ = screen;
 }
-// #@@range_end(layermgr_setwriter)
 
 // #@@range_begin(layermgr_newlayer)
 Layer& LayerManager::NewLayer() {
@@ -58,13 +53,11 @@ Layer& LayerManager::NewLayer() {
 }
 // #@@range_end(layermgr_newlayer)
 
-// #@@range_begin(layermgr_draw)
 void LayerManager::Draw() const {
   for (auto layer : layer_stack_) {
     layer->DrawTo(*screen_);
   }
 }
-// #@@range_end(layermgr_draw)
 
 // #@@range_begin(layermgr_move)
 void LayerManager::Move(unsigned int id, Vector2D<int> new_position) {
