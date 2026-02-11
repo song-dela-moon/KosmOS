@@ -28,6 +28,7 @@
 #include "memory_manager.hpp"
 #include "window.hpp"
 #include "layer.hpp"
+#include "timer.hpp"
 // #@@range_end(includes)
 
 char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
@@ -58,14 +59,18 @@ char memory_manager_buf[sizeof(BitmapMemoryManager)];
 BitmapMemoryManager* memory_manager;
 // #@@range_end(memman_buf)
 
-// #@@range_begin(layermgr_mousehandler)
 unsigned int mouse_layer_id;
 
+// #@@range_begin(mouse_observer)
 void MouseObserver(int8_t displacement_x, int8_t displacement_y) {
   layer_manager->MoveRelative(mouse_layer_id, {displacement_x, displacement_y});
+  StartLAPICTimer();
   layer_manager->Draw();
+  auto elapsed = LAPICTimerElapsed();
+  StopLAPICTimer();
+  printk("MouseObserver: elapsed = %u\n", elapsed);
 }
-// #@@range_end(layermgr_mousehandler)
+// #@@range_end(mouse_observer)
 
 // #@@range_begin(switch_echi2xhci)
 void SwitchEhci2Xhci(const pci::Device& xhc_dev) {
@@ -146,7 +151,7 @@ extern "C" void KernelMainNewStack(
     printk("|__/  :__/ :______/ |_______/ |__/ |__/ |__/ :______/  :______/ \n");
   // #@@range_end(new_console)
   SetLogLevel(kWarn);
-
+  InitializeLAPICTimer();
   SetupSegments();
 
   const uint16_t kernel_cs = 1 << 3;
