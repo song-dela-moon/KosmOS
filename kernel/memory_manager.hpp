@@ -10,6 +10,7 @@
 #include <limits>
 
 #include "error.hpp"
+#include "memory_map.hpp"
 
 // #@@range_begin(frame_id)
 namespace {
@@ -90,4 +91,4 @@ class BitmapMemoryManager {
 };
 // #@@range_end(bitmap_memory_manager)
 
-Error InitializeHeap(BitmapMemoryManager& memory_manager);
+void InitializeMemoryManager(const MemoryMap& memory_map);

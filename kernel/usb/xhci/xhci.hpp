@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "error.hpp"
 #include "usb/xhci/registers.hpp"
 #include "usb/xhci/context.hpp"
@@ -64,4 +66,8 @@ namespace usb::xhci {
    * @return Error::kSuccess if the event was processed successfully
    */
   Error ProcessEvent(Controller& xhc);
+
+  extern Controller* controller;
+  void Initialize();
+  void ProcessEvents();
 }

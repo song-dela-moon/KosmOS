@@ -20,3 +20,5 @@ const size_t kPageDirectoryCount = 64;
  * Eventually the CR3 register will point to the correctly set up page table.
  */
 void SetupIdentityPageTable();
+
+void InitializePaging();

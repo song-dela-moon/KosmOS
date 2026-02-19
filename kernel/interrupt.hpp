@@ -8,8 +8,10 @@
 
 #include <array>
 #include <cstdint>
+#include <deque>
 
 #include "x86_descriptor.hpp"
+#include "message.hpp"
 
 // #@@range_begin(descriptor_attr_struct)
 union InterruptDescriptorAttribute {
@@ -78,3 +80,5 @@ struct InterruptFrame {
 // #@@range_end(frame_struct)
 
 void NotifyEndOfInterrupt();
+
+void InitializeInterrupt(std::deque<Message>* msg_queue);

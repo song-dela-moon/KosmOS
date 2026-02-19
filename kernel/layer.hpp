@@ -107,3 +107,5 @@ class LayerManager {
 
 extern LayerManager* layer_manager;
 // #@@range_end(layer_manager)
+
+void InitializeLayer();
