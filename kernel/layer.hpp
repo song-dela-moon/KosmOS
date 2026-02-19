@@ -34,18 +34,27 @@ class Layer {
   /** @brief Returns the layer's origin coordinate. */
   Vector2D<int> GetPosition() const;
 
+  /** @brief true でレイヤーがドラッグ移動可能となる。 */
+  Layer& SetDraggable(bool draggable);
+  /** @brief レイヤーがドラッグ移動可能なら true を返す。 */
+  bool IsDraggable() const;
+
   /** @brief Updates the layer position to the specified absolute coordinates. Does not redraw. */
   Layer& Move(Vector2D<int> pos);
+
   /** @brief Updates the layer position by the specified relative offset. Does not redraw. */
   Layer& MoveRelative(Vector2D<int> pos_diff);
 
   /** @brief Draws the content of the currently set window to the given target. */
   void DrawTo(FrameBuffer& screen, const Rectangle<int>& area) const;
 
+  // #@@range_begin(fields)
  private:
   unsigned int id_;
-  Vector2D<int> pos_;
-  std::shared_ptr<Window> window_;
+  Vector2D<int> pos_{};
+  std::shared_ptr<Window> window_{};
+  bool draggable_{false};
+  // #@@range_end(fields)
 };
 // #@@range_end(layer)
 

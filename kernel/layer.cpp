@@ -26,7 +26,16 @@ std::shared_ptr<Window> Layer::GetWindow() const {
 Vector2D<int> Layer::GetPosition() const {
   return pos_;
 }
-// #@@range_end(layer_setget_window)
+
+Layer& Layer::SetDraggable(bool draggable) {
+  draggable_ = draggable;
+  return *this;
+}
+
+bool Layer::IsDraggable() const {
+  return draggable_;
+}
+// #@@range_end(set_draggable)
 
 // #@@range_begin(layer_move)
 Layer& Layer::Move(Vector2D<int> pos) {
