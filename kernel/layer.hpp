@@ -81,6 +81,9 @@ class LayerManager {
   /** @brief Hides the specified layer. */
   void Hide(unsigned int id);
 
+  /** @brief Searches for the topmost layer at the specified coordinates. */
+  Layer* FindLayerByPosition(Vector2D<int> pos, unsigned int exclude_id) const;
+
 // #@@range_begin(layermgr_fields)
  private:
   FrameBuffer* screen_{nullptr};
