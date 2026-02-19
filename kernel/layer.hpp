@@ -34,9 +34,9 @@ class Layer {
   /** @brief Returns the layer's origin coordinate. */
   Vector2D<int> GetPosition() const;
 
-  /** @brief true でレイヤーがドラッグ移動可能となる。 */
+  /** @brief When set to true, the layer becomes draggable. */
   Layer& SetDraggable(bool draggable);
-  /** @brief レイヤーがドラッグ移動可能なら true を返す。 */
+  /** @brief Returns true if the layer is draggable. */
   bool IsDraggable() const;
 
   /** @brief Updates the layer position to the specified absolute coordinates. Does not redraw. */
