@@ -29,9 +29,11 @@ void Console::PutString(const char* s) {
     }
     ++s;
   }
+  // #@@range_begin(draw_specific_layer)
   if (layer_manager) {
     layer_manager->Draw(layer_id_);
   }
+  // #@@range_end(draw_specific_layer)
 }
 // #@@range_end(putstring)
 
@@ -45,6 +47,7 @@ void Console::SetWriter(PixelWriter* writer) {
   Refresh();
 }
 
+// #@@range_begin(set_layer_id)
 void Console::SetLayerID(unsigned int layer_id) {
   layer_id_ = layer_id;
 }
@@ -52,6 +55,7 @@ void Console::SetLayerID(unsigned int layer_id) {
 unsigned int Console::LayerID() const {
   return layer_id_;
 }
+// #@@range_end(set_layer_id)
 // #@@range_end(console_setwriter)
 // #@@range_end(put_string)
 

@@ -40,15 +40,23 @@ Layer& Layer::MoveRelative(Vector2D<int> pos_diff) {
 }
 // #@@range_end(layer_move)
 
+// #@@range_begin(layer_drawto)
 void Layer::DrawTo(FrameBuffer& screen, const Rectangle<int>& area) const {
   if (window_) {
     window_->DrawTo(screen, pos_, area);
   }
 }
+// #@@range_end(layer_drawto)
 
+// #@@range_begin(set_writer)
 void LayerManager::SetWriter(FrameBuffer* screen) {
   screen_ = screen;
+
+  FrameBufferConfig back_config = screen->Config();
+  back_config.frame_buffer = nullptr;
+  back_buffer_.Initialize(back_config);
 }
+// #@@range_end(set_writer)
 
 // #@@range_begin(layermgr_newlayer)
 Layer& LayerManager::NewLayer() {
@@ -57,12 +65,16 @@ Layer& LayerManager::NewLayer() {
 }
 // #@@range_end(layermgr_newlayer)
 
+// #@@range_begin(draw_area)
 void LayerManager::Draw(const Rectangle<int>& area) const {
   for (auto layer : layer_stack_) {
-    layer->DrawTo(*screen_, area);
+    layer->DrawTo(back_buffer_, area);
   }
+  screen_->Copy(area.pos, back_buffer_, area);
 }
+// #@@range_end(draw_area)
 
+// #@@range_begin(draw_layer)
 void LayerManager::Draw(unsigned int id) const {
   bool draw = false;
   Rectangle<int> window_area;
@@ -73,10 +85,12 @@ void LayerManager::Draw(unsigned int id) const {
       draw = true;
     }
     if (draw) {
-      layer->DrawTo(*screen_, window_area);
+      layer->DrawTo(back_buffer_, window_area);
     }
   }
+  screen_->Copy(window_area.pos, back_buffer_, window_area);
 }
+// #@@range_end(draw_layer)
 
 // #@@range_begin(layermgr_move)
 void LayerManager::Move(unsigned int id, Vector2D<int> new_pos) {
