@@ -49,7 +49,7 @@ class Window {
    * @param dst       Destination to draw to.
    * @param position  Draw position relative to the top-left of `dst`.
    */
-  void DrawTo(FrameBuffer& dst, Vector2D<int> position);
+  void DrawTo(FrameBuffer& dst, Vector2D<int> pos, const Rectangle<int>& area);
   /** @brief Sets the transparent color. */
   void SetTransparentColor(std::optional<PixelColor> c);
   /** @brief Returns the WindowWriter associated with this instance. */
@@ -64,6 +64,8 @@ class Window {
   int Width() const;
   /** @brief Returns the height of the drawing region in pixels. */
   int Height() const;
+  /** @brief Returns the size of the drawing region in pixels. */
+  Vector2D<int> Size() const;
 
   /** @brief Moves a rectangular region within this window's drawing area.
    *

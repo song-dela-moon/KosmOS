@@ -31,6 +31,8 @@ class Layer {
   Layer& SetWindow(const std::shared_ptr<Window>& window);
   /** @brief Returns the currently set window. */
   std::shared_ptr<Window> GetWindow() const;
+  /** @brief Returns the layer's origin coordinate. */
+  Vector2D<int> GetPosition() const;
 
   /** @brief Updates the layer position to the specified absolute coordinates. Does not redraw. */
   Layer& Move(Vector2D<int> pos);
@@ -38,7 +40,7 @@ class Layer {
   Layer& MoveRelative(Vector2D<int> pos_diff);
 
   /** @brief Draws the content of the currently set window to the given target. */
-  void DrawTo(FrameBuffer& screen) const;
+  void DrawTo(FrameBuffer& screen, const Rectangle<int>& area) const;
 
  private:
   unsigned int id_;
@@ -60,11 +62,13 @@ class LayerManager {
   Layer& NewLayer();
 
   /** @brief Draws all layers that are currently visible. */
-  void Draw() const;
+  void Draw(const Rectangle<int>& area) const;
+  /** @brief Redraws the window area of the specified layer. */
+  void Draw(unsigned int id) const;
 
-  /** @brief Updates the specified layer's position to the given absolute coordinates. Does not redraw. */
-  void Move(unsigned int id, Vector2D<int> new_position);
-  /** @brief Updates the specified layer's position by the given relative offset. Does not redraw. */
+  /** @brief Updates the specified layer's position to the given absolute coordinates and redraws. */
+  void Move(unsigned int id, Vector2D<int> new_pos);
+  /** @brief Updates the specified layer's position by the given relative offset and redraws. */
   void MoveRelative(unsigned int id, Vector2D<int> pos_diff);
 
   /** @brief Changes the z-order (height) of a layer to the specified position.
