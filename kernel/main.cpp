@@ -26,6 +26,7 @@
 #include "window.hpp"
 #include "layer.hpp"
 #include "message.hpp"
+#include "timer.hpp"
 // #@@range_end(includes)
 
 int printk(const char* format, ...) {
@@ -98,6 +99,10 @@ extern "C" void KernelMainNewStack(
 
   layer_manager->Draw({{0, 0}, ScreenSize()});
 
+  // #@@range_begin(call_init_timer)
+  InitializeLAPICTimer();
+  // #@@range_end(call_init_timer)
+
   __asm__("sti");
 
   char str[128];
@@ -121,10 +126,15 @@ extern "C" void KernelMainNewStack(
     main_queue.pop_front();
     __asm__("sti");
 
+    // #@@range_begin(process_event)
     switch (msg.type) {
     case Message::kInterruptXHCI:
       usb::xhci::ProcessEvents();
       break;
+    case Message::kInterruptLAPICTimer:
+      printk("Timer interrupt\n");
+      break;
+    // #@@range_end(process_event)
     default:
       Log(kError, "Unknown message type: %d\n", msg.type);
     }
