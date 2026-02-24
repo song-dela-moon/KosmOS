@@ -86,12 +86,10 @@ SetCR3:
     ret
 ; #@@range_end(set_cr3)
 
-; #@@range_begin(get_cr3)
 global GetCR3  ; uint64_t GetCR3();
 GetCR3:
     mov rax, cr3
     ret
-; #@@range_end(get_cr3)
 
 ; #@@range_begin(set_main_stack)
 extern kernel_main_stack
@@ -106,7 +104,6 @@ KernelMain:
     jmp .fin
 ; #@@range_end(set_main_stack)
 
-; #@@range_begin(switch_context)
 global SwitchContext
 SwitchContext:  ; void SwitchContext(void* next_ctx, void* current_ctx);
     mov [rsi + 0x40], rax
@@ -182,4 +179,3 @@ SwitchContext:  ; void SwitchContext(void* next_ctx, void* current_ctx);
     mov rdi, [rdi + 0x60]
 
     o64 iret
-; #@@range_end(switch_context)
