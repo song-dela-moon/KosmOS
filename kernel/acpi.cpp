@@ -76,7 +76,7 @@ size_t XSDT::Count() const {
 
 const FADT* fadt;
 
-// #@@range_begin(wait_ms)
+
 void WaitMilliseconds(unsigned long msec) {
   const bool pm_timer_32 = (fadt->flags >> 8) & 1;
   const uint32_t start = IoIn32(fadt->pm_tmr_blk);
@@ -90,7 +90,7 @@ void WaitMilliseconds(unsigned long msec) {
   }
   while (IoIn32(fadt->pm_tmr_blk) < end);
 }
-// #@@range_end(wait_ms)
+
 
 void Initialize(const RSDP& rsdp) {
   if (!rsdp.IsValid()) {

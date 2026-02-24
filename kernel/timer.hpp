@@ -45,10 +45,10 @@ class TimerManager {
 };
 // #@@range_end(timermgr)
 
-// #@@range_begin(lapic_freq)
+
 extern TimerManager* timer_manager;
 extern unsigned long lapic_timer_freq;
 const int kTimerFreq = 100;
-// #@@range_end(lapic_freq)
+
 
 void LAPICTimerOnInterrupt();
