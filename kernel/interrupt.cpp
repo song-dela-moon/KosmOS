@@ -9,6 +9,7 @@
 #include "asmfunc.h"
 #include "segment.hpp"
 #include "timer.hpp"
+#include "task.hpp"
 
 // #@@range_begin(idt_array)
 std::array<InterruptDescriptor, 256> idt;
@@ -36,13 +37,14 @@ void NotifyEndOfInterrupt() {
 
 // #@@range_begin(int_handler)
 namespace {
-  std::deque<Message>* msg_queue;
 
+  // #@@range_begin(inthandler_xhci)
   __attribute__((interrupt))
   void IntHandlerXHCI(InterruptFrame* frame) {
-    msg_queue->push_back(Message{Message::kInterruptXHCI});
+    task_manager->SendMessage(1, Message{Message::kInterruptXHCI});
     NotifyEndOfInterrupt();
   }
+  // #@@range_end(inthandler_xhci)
 
   __attribute__((interrupt))
   void IntHandlerLAPICTimer(InterruptFrame* frame) {
@@ -52,8 +54,9 @@ namespace {
 // #@@range_end(int_handler)
 
 // #@@range_begin(register_handler)
-void InitializeInterrupt(std::deque<Message>* msg_queue) {
-  ::msg_queue = msg_queue;
+// #@@range_begin(init_int)
+void InitializeInterrupt() {
+// #@@range_end(init_int)
 
   SetIDTEntry(idt[InterruptVector::kXHCI],
               MakeIDTAttr(DescriptorType::kInterruptGate, 0),

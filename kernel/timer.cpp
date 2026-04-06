@@ -13,8 +13,8 @@ namespace {
 }
 
 
-void InitializeLAPICTimer(std::deque<Message>& msg_queue) {
-  timer_manager = new TimerManager{msg_queue};
+void InitializeLAPICTimer() {
+  timer_manager = new TimerManager;
 
   divide_config = 0b1011; // divide 1:1
   lvt_timer = 0b001 << 16; // masked, one-shot
@@ -49,8 +49,7 @@ Timer::Timer(unsigned long timeout, int value)
 }
 
 // #@@range_begin(timermgr_addtimer)
-TimerManager::TimerManager(std::deque<Message>& msg_queue)
-    : msg_queue_{msg_queue} {
+TimerManager::TimerManager() {
   timers_.push(Timer{std::numeric_limits<unsigned long>::max(), -1});
 }
 
@@ -79,9 +78,10 @@ bool TimerManager::Tick() {
     Message m{Message::kTimerTimeout};
     m.arg.timer.timeout = t.Timeout();
     m.arg.timer.value = t.Value();
-    msg_queue_.push_back(m);
+    task_manager->SendMessage(1, m);
 
     timers_.pop();
+    // #@@range_end(timer_tick)
   }
 
   return task_timer_timeout;
