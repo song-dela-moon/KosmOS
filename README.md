@@ -3,6 +3,7 @@
 단순한 이론 학습을 넘어, **운영체제를 바닥부터 직접 만들어 보며** 시스템의 본질적인 동작 원리를 파악하는 것을 목표로 합니다.
 
 > **Note**: 본 프로젝트는 'MikanOS'를 참고하여 구현 중입니다.
+![KosmOS](https://github.com/user-attachments/assets/cb2e28d2-faca-492e-a368-efc3c5190606)
 
 ---
 ## 🏗 아키텍처 (Architecture)
