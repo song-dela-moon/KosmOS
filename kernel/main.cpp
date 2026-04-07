@@ -143,17 +143,7 @@ void TaskB(uint64_t task_id, int64_t data) {
   }
 }
 
-// #@@range_begin(taskc)
-void TaskIdle(uint64_t task_id, int64_t data) {
-  printk("TaskIdle: task_id=%lu, data=%lx\n", task_id, data);
-  while (true) __asm__("hlt");
-}
-// #@@range_end(taskc)
-
-// #@@range_begin(stack)
 alignas(16) uint8_t kernel_main_stack[1024 * 1024];
-// #@@range_end(stack)
-
 
 extern "C" void KernelMainNewStack(
     const FrameBufferConfig& frame_buffer_config_ref,
@@ -199,16 +189,14 @@ extern "C" void KernelMainNewStack(
   timer_manager->AddTimer(Timer{kTimer05Sec, kTextboxCursorTimer});
   bool textbox_cursor_visible = false;
 
-  // #@@range_begin(current_task)
+  // #@@range_begin(init_tasks)
   InitializeTask();
   Task& main_task = task_manager->CurrentTask();
-  // #@@range_end(current_task)
   const uint64_t taskb_id = task_manager->NewTask()
     .InitContext(TaskB, 45)
     .Wakeup()
     .ID();
-  task_manager->NewTask().InitContext(TaskIdle, 0xdeadbeef).Wakeup();
-  task_manager->NewTask().InitContext(TaskIdle, 0xcafebabe).Wakeup();
+  // #@@range_end(init_tasks)
 
   // #@@range_begin(sti_last)
   usb::xhci::Initialize();

@@ -11,6 +11,12 @@ namespace {
     auto it = std::remove(c.begin(), c.end(), value);
     c.erase(it, c.end());
   }
+
+// #@@range_begin(task_idle)
+  void TaskIdle(uint64_t task_id, int64_t data) {
+    while (true) __asm__("hlt");
+  }
+// #@@range_end(task_idle)
 } // namespace
 // #@@range_end(erase)
 
@@ -90,6 +96,12 @@ TaskManager::TaskManager() {
     .SetLevel(current_level_)
     .SetRunning(true);
   running_[current_level_].push_back(&task);
+
+  Task& idle = NewTask()
+    .InitContext(TaskIdle, 0)
+    .SetLevel(0)
+    .SetRunning(true);
+  running_[0].push_back(&idle);
 }
 // #@@range_end(taskmgr_ctor)
 
