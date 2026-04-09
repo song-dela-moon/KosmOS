@@ -31,6 +31,7 @@
 #include "keyboard.hpp"
 #include "task.hpp"
 #include "terminal.hpp"
+#include "fat.hpp"
 // #@@range_end(includes)
 
 int printk(const char* format, ...) {
@@ -144,7 +145,10 @@ extern "C" void KernelMainNewStack(
   InitializeMemoryManager(memory_map);
   InitializeInterrupt();
 
+  // #@@range_begin(call_init_fat)
+  fat::Initialize(volume_image);
   InitializePCI();
+  // #@@range_end(call_init_fat)
   
   InitializeLayer();
   InitializeMainWindow();
@@ -177,21 +181,6 @@ extern "C" void KernelMainNewStack(
   InitializeMouse();
 
   // #@@range_begin(dump_volume)
-  uint8_t* p = reinterpret_cast<uint8_t*>(volume_image);
-  printk("Volume Image:\n");
-  for (int i = 0; i < 16; ++i) {
-    printk("%04x:", i * 16);
-    for (int j = 0; j < 8; ++j) {
-      printk(" %02x", *p);
-      ++p;
-    }
-    printk(" ");
-    for (int j = 0; j < 8; ++j) {
-      printk(" %02x", *p);
-      ++p;
-    }
-    printk("\n");
-  }
   // #@@range_end(dump_volume)
 
   char str[128];
