@@ -39,6 +39,9 @@ class Terminal {
   int linebuf_index_{0};
   std::array<char, kLineMax> linebuf_{};
   void Scroll1();
+
+  void ExecuteLine();
+  void Print(const char* s);
   // #@@range_end(term_fields)
 };
 
