@@ -30,6 +30,7 @@
 #include "acpi.hpp"
 #include "keyboard.hpp"
 #include "task.hpp"
+#include "terminal.hpp"
 // #@@range_end(includes)
 
 int printk(const char* format, ...) {
@@ -60,7 +61,6 @@ void InitializeMainWindow() {
   layer_manager->UpDown(main_window_layer_id, 2);
 }
 
-// #@@range_begin(create_text_window)
 std::shared_ptr<ToplevelWindow> text_window;
 unsigned int text_window_layer_id;
 void InitializeTextWindow() {
@@ -70,12 +70,11 @@ void InitializeTextWindow() {
   text_window = std::make_shared<ToplevelWindow>(
       win_w, win_h, screen_config.pixel_format, "Text Box Test");
   DrawTextbox(*text_window->InnerWriter(), {0, 0}, text_window->InnerSize());
-// #@@range_end(create_text_window)
 
   text_window_layer_id = layer_manager->NewLayer()
     .SetWindow(text_window)
     .SetDraggable(true)
-    .Move({350, 200})
+    .Move({500, 100})
     .ID();
 
   layer_manager->UpDown(text_window_layer_id, std::numeric_limits<int>::max());
@@ -83,13 +82,11 @@ void InitializeTextWindow() {
 
 int text_window_index;
 
-// #@@range_begin(draw_text_cursor)
 void DrawTextCursor(bool visible) {
   const auto color = visible ? ToColor(0) : ToColor(0xffffff);
   const auto pos = Vector2D<int>{4 + 8*text_window_index, 5};
   FillRectangle(*text_window->InnerWriter(), pos, {7, 15}, color);
 }
-// #@@range_end(draw_text_cursor)
 
 void InputTextWindow(char c) {
   if (c == 0) {
@@ -222,6 +219,12 @@ extern "C" void KernelMainNewStack(
     .InitContext(TaskB, 45)
     .Wakeup()
     .ID();
+  // #@@range_begin(start_taskterm)
+  const uint64_t task_terminal_id = task_manager->NewTask()
+    .InitContext(TaskTerminal, 0)
+    .Wakeup()
+    .ID();
+  // #@@range_end(start_taskterm)
   // #@@range_end(init_tasks)
 
   // #@@range_begin(sti_last)
@@ -259,6 +262,7 @@ extern "C" void KernelMainNewStack(
     case Message::kInterruptXHCI:
       usb::xhci::ProcessEvents();
       break;
+    // #@@range_begin(send_timermsg)
     case Message::kTimerTimeout:
       if (msg->arg.timer.value == kTextboxCursorTimer) {
         __asm__("cli");
@@ -268,9 +272,13 @@ extern "C" void KernelMainNewStack(
         textbox_cursor_visible = !textbox_cursor_visible;
         DrawTextCursor(textbox_cursor_visible);
         layer_manager->Draw(text_window_layer_id);
+
+        __asm__("cli");
+        task_manager->SendMessage(task_terminal_id, *msg);
+        __asm__("sti");
       }
       break;
-    // #@@range_begin(sendkey_to_active)
+    // #@@range_end(send_timermsg)
     case Message::kKeyPush:
       if (auto act = active_layer->GetActive(); act == text_window_layer_id) {
         InputTextWindow(msg->arg.keyboard.ascii);
@@ -286,7 +294,6 @@ extern "C" void KernelMainNewStack(
             msg->arg.keyboard.ascii);
       }
       break;
-    // #@@range_end(sendkey_to_active)
     // #@@range_begin(handle_layermsg)
     case Message::kLayer:
       ProcessLayerMessage(*msg);
