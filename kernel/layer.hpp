@@ -125,6 +125,7 @@ class ActiveLayer {
 };
 
 extern ActiveLayer* active_layer;
+extern std::map<unsigned int, uint64_t>* layer_task_map;
 // #@@range_end(active_layer)
 
 void InitializeLayer();
