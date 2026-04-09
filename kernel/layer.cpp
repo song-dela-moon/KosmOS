@@ -85,14 +85,22 @@ void LayerManager::Draw(const Rectangle<int>& area) const {
 }
 // #@@range_end(draw_area)
 
-// #@@range_begin(draw_layer)
+// #@@range_begin(draw_area)
 void LayerManager::Draw(unsigned int id) const {
+  Draw(id, {{0, 0}, {-1, -1}});
+}
+
+void LayerManager::Draw(unsigned int id, Rectangle<int> area) const {
   bool draw = false;
   Rectangle<int> window_area;
   for (auto layer : layer_stack_) {
     if (layer->ID() == id) {
       window_area.size = layer->GetWindow()->Size();
       window_area.pos = layer->GetPosition();
+      if (area.size.x >= 0 || area.size.y >= 0) {
+        area.pos = area.pos + window_area.pos;
+        window_area = window_area & area;
+      }
       draw = true;
     }
     if (draw) {
@@ -101,7 +109,7 @@ void LayerManager::Draw(unsigned int id) const {
   }
   screen_->Copy(window_area.pos, back_buffer_, window_area);
 }
-// #@@range_end(draw_layer)
+// #@@range_end(draw_area)
 
 // #@@range_begin(layermgr_move)
 void LayerManager::Move(unsigned int id, Vector2D<int> new_pos) {
@@ -294,6 +302,11 @@ void ProcessLayerMessage(const Message& msg) {
   case LayerOperation::Draw:
     layer_manager->Draw(arg.layer_id);
     break;
+  // #@@range_begin(case_draw_area)
+  case LayerOperation::DrawArea:
+    layer_manager->Draw(arg.layer_id, {{arg.x, arg.y}, {arg.w, arg.h}});
+    break;
+  // #@@range_end(case_draw_area)
   }
 }
 // #@@range_end(proc_layermsg)
