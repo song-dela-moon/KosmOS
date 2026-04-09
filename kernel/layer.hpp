@@ -13,6 +13,7 @@
 #include "graphics.hpp"
 #include "frame_buffer.hpp"
 #include "window.hpp"
+#include "message.hpp"
 
 /** @brief Layer represents a single layer.
  *
@@ -109,3 +110,4 @@ extern LayerManager* layer_manager;
 // #@@range_end(layer_manager)
 
 void InitializeLayer();
+void ProcessLayerMessage(const Message& msg);
