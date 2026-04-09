@@ -91,23 +91,39 @@ class LayerManager {
   /** @brief Hides the specified layer. */
   void Hide(unsigned int id);
 
-  /** @brief Searches for the topmost layer at the specified coordinates. */
+  /** @brief Finds the topmost layer that has a window at the specified coordinates. */
   Layer* FindLayerByPosition(Vector2D<int> pos, unsigned int exclude_id) const;
+  /** @brief Returns the layer with the specified ID. */
+  Layer* FindLayer(unsigned int id);
+  /** @brief Returns the current height of the specified layer. */
+  int GetHeight(unsigned int id);
 
-// #@@range_begin(layermgr_fields)
  private:
   FrameBuffer* screen_{nullptr};
   mutable FrameBuffer back_buffer_{};
-// #@@range_end(layermgr_fields)
   std::vector<std::unique_ptr<Layer>> layers_{};
   std::vector<Layer*> layer_stack_{};
   unsigned int latest_id_{0};
-
-  Layer* FindLayer(unsigned int id);
 };
 
 extern LayerManager* layer_manager;
-// #@@range_end(layer_manager)
+
+// #@@range_begin(active_layer)
+class ActiveLayer {
+ public:
+  ActiveLayer(LayerManager& manager);
+  void SetMouseLayer(unsigned int mouse_layer);
+  void Activate(unsigned int layer_id);
+  unsigned int GetActive() const { return active_layer_; }
+
+ private:
+  LayerManager& manager_;
+  unsigned int active_layer_{0};
+  unsigned int mouse_layer_{0};
+};
+
+extern ActiveLayer* active_layer;
+// #@@range_end(active_layer)
 
 void InitializeLayer();
 void ProcessLayerMessage(const Message& msg);
