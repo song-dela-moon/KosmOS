@@ -42,6 +42,7 @@ class Terminal {
 
   void ExecuteLine();
   void Print(const char* s);
+  void Print(char c);
 
   // #@@range_begin(term_fields)
   std::deque<std::array<char, kLineMax>> cmd_history_{};
