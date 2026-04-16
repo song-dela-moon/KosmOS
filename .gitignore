@@ -3,6 +3,8 @@
 *.bin
 *.elf
 *.swp
+disk.img
+mnt/
 
 /*.bin
 /*.elf
