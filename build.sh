@@ -1,5 +1,6 @@
 #!/bin/sh -eu
 
+sudo umount ./mnt 2>/dev/null || true
 make ${MAKE_OPTS:-} -C kernel kernel.elf
 
 for MK in $(ls apps/*/Makefile)
