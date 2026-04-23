@@ -168,13 +168,11 @@ extern "C" void KernelMainNewStack(
   InitializeTask();
 
   Task& main_task = task_manager->CurrentTask();
-  // #@@range_begin(start_taskterm)
+  terminals = new std::map<uint64_t, Terminal*>;
   const uint64_t task_terminal_id = task_manager->NewTask()
     .InitContext(TaskTerminal, 0)
     .Wakeup()
     .ID();
-  // #@@range_end(start_taskterm)
-  // #@@range_end(init_tasks)
 
   // #@@range_begin(sti_last)
   usb::xhci::Initialize();

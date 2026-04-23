@@ -9,6 +9,7 @@
 #include <array>
 #include <deque>
 #include <map>
+#include <optional>
 #include "window.hpp"
 #include "task.hpp"
 #include "layer.hpp"
@@ -22,15 +23,17 @@ class Terminal {
   static const int kLineMax = 128;
   // #@@range_end(linemax)
 
-  Terminal();
+  Terminal(uint64_t task_id);
   unsigned int LayerID() const { return layer_id_; }
   Rectangle<int> BlinkCursor();
   Rectangle<int> InputKey(uint8_t modifier, uint8_t keycode, char ascii);
 
-  // #@@range_begin(term_fields)
+  void Print(const char* s, std::optional<size_t> len = std::nullopt);
+
  private:
   std::shared_ptr<ToplevelWindow> window_;
   unsigned int layer_id_;
+  uint64_t task_id_;
 
   Vector2D<int> cursor_{0, 0};
   bool cursor_visible_{false};
@@ -43,15 +46,13 @@ class Terminal {
 
   void ExecuteLine();
   Error ExecuteFile(const fat::DirectoryEntry& file_entry, char* command, char* first_arg);
-  void Print(const char* s);
   void Print(char c);
 
-  // #@@range_begin(term_fields)
   std::deque<std::array<char, kLineMax>> cmd_history_{};
   int cmd_history_index_{-1};
   Rectangle<int> HistoryUpDown(int direction);
-  // #@@range_end(term_fields)
 };
 
+extern std::map<uint64_t, Terminal*>* terminals;
 void TaskTerminal(uint64_t task_id, int64_t data);
 // #@@range_end(term)
