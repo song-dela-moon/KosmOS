@@ -12,7 +12,6 @@
 #include "memory_manager.hpp"
 #include "paging.hpp"
 
-// #@@range_begin(make_argv)
 namespace {
 
 std::vector<char*> MakeArgVector(char* command, char* first_arg) {
@@ -44,14 +43,11 @@ std::vector<char*> MakeArgVector(char* command, char* first_arg) {
   return argv;
 }
 
-// #@@range_begin(get_phdr)
 Elf64_Phdr* GetProgramHeader(Elf64_Ehdr* ehdr) {
   return reinterpret_cast<Elf64_Phdr*>(
       reinterpret_cast<uintptr_t>(ehdr) + ehdr->e_phoff);
 }
-// #@@range_end(get_phdr)
 
-// #@@range_begin(get_first_addr)
 uintptr_t GetFirstLoadAddress(Elf64_Ehdr* ehdr) {
   auto phdr = GetProgramHeader(ehdr);
   for (int i = 0; i < ehdr->e_phnum; ++i) {
@@ -60,11 +56,9 @@ uintptr_t GetFirstLoadAddress(Elf64_Ehdr* ehdr) {
   }
   return 0;
 }
-// #@@range_end(get_first_addr)
 
 static_assert(kBytesPerFrame >= 4096);
 
-// #@@range_begin(new_pagemap)
 WithError<PageMapEntry*> NewPageMap() {
   auto frame = memory_manager->Allocate(1);
   if (frame.error) {
@@ -75,9 +69,7 @@ WithError<PageMapEntry*> NewPageMap() {
   memset(e, 0, sizeof(uint64_t) * 512);
   return { e, MAKE_ERROR(Error::kSuccess) };
 }
-// #@@range_end(new_pagemap)
 
-// #@@range_begin(set_newpagemap)
 WithError<PageMapEntry*> SetNewPageMapIfNotPresent(PageMapEntry& entry) {
   if (entry.bits.present) {
     return { entry.Pointer(), MAKE_ERROR(Error::kSuccess) };
@@ -93,9 +85,7 @@ WithError<PageMapEntry*> SetNewPageMapIfNotPresent(PageMapEntry& entry) {
 
   return { child_map, MAKE_ERROR(Error::kSuccess) };
 }
-// #@@range_end(set_newpagemap)
 
-// #@@range_begin(setup_pagemap)
 WithError<size_t> SetupPageMap(
     PageMapEntry* page_map, int page_map_level, LinearAddress4Level addr, size_t num_4kpages) {
   while (num_4kpages > 0) {
@@ -130,16 +120,12 @@ WithError<size_t> SetupPageMap(
 
   return { num_4kpages, MAKE_ERROR(Error::kSuccess) };
 }
-// #@@range_end(setup_pagemap)
 
-// #@@range_begin(setup_pagemaps)
 Error SetupPageMaps(LinearAddress4Level addr, size_t num_4kpages) {
   auto pml4_table = reinterpret_cast<PageMapEntry*>(GetCR3());
   return SetupPageMap(pml4_table, 4, addr, num_4kpages).error;
 }
-// #@@range_end(setup_pagemaps)
 
-// #@@range_begin(copy_loadsegms)
 Error CopyLoadSegments(Elf64_Ehdr* ehdr) {
   auto phdr = GetProgramHeader(ehdr);
   for (int i = 0; i < ehdr->e_phnum; ++i) {
@@ -161,9 +147,7 @@ Error CopyLoadSegments(Elf64_Ehdr* ehdr) {
   }
   return MAKE_ERROR(Error::kSuccess);
 }
-// #@@range_end(copy_loadsegms)
 
-// #@@range_begin(load_elf)
 Error LoadELF(Elf64_Ehdr* ehdr) {
   if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
     return MAKE_ERROR(Error::kInvalidFormat);
@@ -180,9 +164,7 @@ Error LoadELF(Elf64_Ehdr* ehdr) {
 
   return MAKE_ERROR(Error::kSuccess);
 }
-// #@@range_end(load_elf)
 
-// #@@range_begin(clean_pagemap)
 Error CleanPageMap(PageMapEntry* page_map, int page_map_level) {
   for (int i = 0; i < 512; ++i) {
     auto entry = page_map[i];
@@ -206,9 +188,7 @@ Error CleanPageMap(PageMapEntry* page_map, int page_map_level) {
 
   return MAKE_ERROR(Error::kSuccess);
 }
-// #@@range_end(clean_pagemap)
 
-// #@@range_begin(clean_pagemaps)
 Error CleanPageMaps(LinearAddress4Level addr) {
   auto pml4_table = reinterpret_cast<PageMapEntry*>(GetCR3());
   auto pdp_table = pml4_table[addr.parts.pml4].Pointer();
@@ -221,14 +201,11 @@ Error CleanPageMaps(LinearAddress4Level addr) {
   const FrameID pdp_frame{pdp_addr / kBytesPerFrame};
   return memory_manager->Free(pdp_frame, 1);
 }
-// #@@range_end(clean_pagemaps)
 
 } // namespace
-// #@@range_end(make_argv)
 
 #include "logger.hpp"
 
-// #@@range_begin(term_ctor)
 Terminal::Terminal() {
   window_ = std::make_shared<ToplevelWindow>(
       kColumns * 8 + 8 + ToplevelWindow::kMarginX,
@@ -243,13 +220,9 @@ Terminal::Terminal() {
     .ID();
 
   Print(">");
-  // #@@range_begin(resize_history)
   cmd_history_.resize(8);
-  // #@@range_end(resize_history)
 }
-// #@@range_end(term_ctor)
 
-// #@@range_begin(term_blink)
 Rectangle<int> Terminal::BlinkCursor() {
   cursor_visible_ = !cursor_visible_;
   DrawCursor(cursor_visible_);
@@ -262,21 +235,17 @@ void Terminal::DrawCursor(bool visible) {
   FillRectangle(*window_->Writer(), CalcCursorPos(), {7, 15}, color);
 }
 
-// #@@range_begin(calc_cursor_pos)
 Vector2D<int> Terminal::CalcCursorPos() const {
   return ToplevelWindow::kTopLeftMargin +
       Vector2D<int>{4 + 8 * cursor_.x, 4 + 16 * cursor_.y};
 }
-// #@@range_end(calc_cursor_pos)
 
-// #@@range_begin(input_key)
 Rectangle<int> Terminal::InputKey(
     uint8_t modifier, uint8_t keycode, char ascii) {
   DrawCursor(false);
 
   Rectangle<int> draw_area{CalcCursorPos(), {8*2, 16}};
 
-  // #@@range_begin(handle_enter)
   if (ascii == '\n') {
     linebuf_[linebuf_index_] = 0;
     if (linebuf_index_ > 0) {
@@ -285,7 +254,6 @@ Rectangle<int> Terminal::InputKey(
     }
     linebuf_index_ = 0;
     cmd_history_index_ = -1;
-    // #@@range_end(handle_enter)
 
     cursor_.x = 0;
     if (cursor_.y < kRows - 1) {
@@ -314,21 +282,17 @@ Rectangle<int> Terminal::InputKey(
       WriteAscii(*window_->Writer(), CalcCursorPos(), ascii, kDesktopFGColor);
       ++cursor_.x;
     }
-    // #@@range_begin(handle_arrow)
   } else if (keycode == 0x51) { // down arrow
     draw_area = HistoryUpDown(-1);
   } else if (keycode == 0x52) { // up arrow
     draw_area = HistoryUpDown(1);
   }
-  // #@@range_end(handle_arrow)
 
   DrawCursor(true);
 
   return draw_area;
 }
-// #@@range_end(input_key)
 
-// #@@range_begin(scroll)
 void Terminal::Scroll1() {
   Rectangle<int> move_src{
     ToplevelWindow::kTopLeftMargin + Vector2D<int>{4, 4 + 16},
@@ -338,9 +302,7 @@ void Terminal::Scroll1() {
   FillRectangle(*window_->InnerWriter(),
                 {4, 4 + 16*cursor_.y}, {8*kColumns, 16}, kDesktopBGColor);
 }
-// #@@range_end(scroll)
 
-// #@@range_begin(execute_line)
 void Terminal::ExecuteLine() {
   char* command = &linebuf_[0];
   char* first_arg = strchr(&linebuf_[0], ' ');
@@ -349,7 +311,6 @@ void Terminal::ExecuteLine() {
     ++first_arg;
   }
 
-  // #@@range_begin(clear_command)
   if (strcmp(command, "echo") == 0) {
     if (first_arg) {
       Print(first_arg);
@@ -359,7 +320,6 @@ void Terminal::ExecuteLine() {
     FillRectangle(*window_->InnerWriter(),
                   {4, 4}, {8 * kColumns, 16 * kRows}, kDesktopBGColor);
     cursor_.y = 0;
-  // #@@range_begin(lspci_command)
   } else if (strcmp(command, "lspci") == 0) {
     char s[64];
     for (int i = 0; i < pci::num_device; ++i) {
@@ -420,7 +380,6 @@ void Terminal::ExecuteLine() {
       DrawCursor(true);
     }
   } else if (command[0] != 0) {
-    // #@@range_begin(pass_arg)
     auto file_entry = fat::FindFile(command);
     if (!file_entry) {
       Print("no such command: ");
@@ -431,16 +390,12 @@ void Terminal::ExecuteLine() {
       Print(err.Name());
       Print("\n");
     }
-    // #@@range_end(pass_arg)
   }
 }
 
-// #@@range_begin(execute_file)
 Error Terminal::ExecuteFile(const fat::DirectoryEntry& file_entry, char* command, char* first_arg) {
-  // #@@range_begin(load_file)
   std::vector<uint8_t> file_buf(file_entry.file_size);
   fat::LoadFile(&file_buf[0], file_buf.size(), file_entry);
-  // #@@range_end(load_file)
 
   auto elf_header = reinterpret_cast<Elf64_Ehdr*>(&file_buf[0]);
   if (memcmp(elf_header->e_ident, "\x7f" "ELF", 4) != 0) {
@@ -450,7 +405,6 @@ Error Terminal::ExecuteFile(const fat::DirectoryEntry& file_entry, char* command
     return MAKE_ERROR(Error::kSuccess);
   }
 
-  // #@@range_begin(load_app)
   auto argv = MakeArgVector(command, first_arg);
   if (auto err = LoadELF(elf_header)) {
     return err;
@@ -470,7 +424,6 @@ Error Terminal::ExecuteFile(const fat::DirectoryEntry& file_entry, char* command
   if (auto err = CleanPageMaps(LinearAddress4Level{addr_first})) {
     return err;
   }
-  // #@@range_end(load_app)
 
   return MAKE_ERROR(Error::kSuccess);
 }
@@ -508,7 +461,6 @@ void Terminal::Print(const char* s) {
   DrawCursor(true);
 }
 
-// #@@range_begin(history_updown)
 Rectangle<int> Terminal::HistoryUpDown(int direction) {
   if (direction == -1 && cmd_history_index_ >= 0) {
     --cmd_history_index_;
@@ -534,19 +486,15 @@ Rectangle<int> Terminal::HistoryUpDown(int direction) {
   cursor_.x = linebuf_index_ + 1;
   return draw_area;
 }
-// #@@range_end(history_updown)
 
-// #@@range_begin(termtask)
 void TaskTerminal(uint64_t task_id, int64_t data) {
   __asm__("cli");
   Task& task = task_manager->CurrentTask();
   Terminal* terminal = new Terminal;
   layer_manager->Move(terminal->LayerID(), {100, 200});
   active_layer->Activate(terminal->LayerID());
-  // #@@range_begin(register_taskmap)
   layer_task_map->insert(std::make_pair(terminal->LayerID(), task_id));
   __asm__("sti");
-  // #@@range_end(register_taskmap)
 
   while (true) {
     __asm__("cli");
@@ -559,7 +507,6 @@ void TaskTerminal(uint64_t task_id, int64_t data) {
     __asm__("sti");
 
     switch (msg->type) {
-    // #@@range_begin(send_draw_request)
     case Message::kTimerTimeout:
       {
         const auto area = terminal->BlinkCursor();
@@ -570,8 +517,6 @@ void TaskTerminal(uint64_t task_id, int64_t data) {
         __asm__("sti");
       }
       break;
-    // #@@range_end(send_draw_request)
-    // #@@range_begin(handle_keypush)
     case Message::kKeyPush:
       {
         const auto area = terminal->InputKey(msg->arg.keyboard.modifier,
@@ -584,10 +529,8 @@ void TaskTerminal(uint64_t task_id, int64_t data) {
         __asm__("sti");
       }
       break;
-    // #@@range_end(handle_keypush)
     default:
       break;
     }
   }
 }
-// #@@range_end(termtask)
