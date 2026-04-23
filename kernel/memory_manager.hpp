@@ -91,4 +91,5 @@ class BitmapMemoryManager {
 };
 // #@@range_end(bitmap_memory_manager)
 
+extern BitmapMemoryManager* memory_manager;
 void InitializeMemoryManager(const MemoryMap& memory_map);

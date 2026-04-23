@@ -29,7 +29,9 @@ class Error {
     kNoPCIMSI,
     kUnknownPixelFormat,
     kNoSuchTask,
-    kLastOfCode,  // This enumerator must always be placed last
+    kInvalidFormat,
+    kFrameTooSmall,
+    kLastOfCode,  // This enumerator must always be placed at the end
   };
 
  private:
@@ -57,6 +59,8 @@ class Error {
     "kNoPCIMSI",
     "kUnknownPixelFormat",
     "kNoSuchTask",
+    "kInvalidFormat",
+    "kFrameTooSmall",
   };
   static_assert(Error::Code::kLastOfCode == code_names_.size());
 

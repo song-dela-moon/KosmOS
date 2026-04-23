@@ -20,7 +20,7 @@ all: $(TARGET)
 
 .PHONY: clean
 clean:
-	rm -rf *.o
+	rm -rf *.o kernel.elf .*.d usb/*.o usb/*/*.o
 
 kernel.elf: $(OBJS) Makefile
 	ld.lld $(LDFLAGS) -o kernel.elf $(OBJS) -lc -lc++ -lc++abi
@@ -57,4 +57,8 @@ font_text.o: font_text.bin
 depends:
 	$(MAKE) $(DEPENDS)
 
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),depends)
 -include $(DEPENDS)
+endif
+endif
