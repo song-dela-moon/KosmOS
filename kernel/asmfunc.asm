@@ -25,7 +25,6 @@ GetCS:
     mov ax, cs
     ret
 
-; #@@range_begin(load_idt_function)
 global LoadIDT  ; void LoadIDT(uint16_t limit, uint64_t offset);
 LoadIDT:
     push rbp
@@ -37,9 +36,7 @@ LoadIDT:
     mov rsp, rbp
     pop rbp
     ret
-; #@@range_end(load_idt_function)
 
-; #@@range_begin(load_gdt)
 global LoadGDT  ; void LoadGDT(uint16_t limit, uint64_t offset);
 LoadGDT:
     push rbp
@@ -51,9 +48,7 @@ LoadGDT:
     mov rsp, rbp
     pop rbp
     ret
-; #@@range_end(load_gdt)
 
-; #@@range_begin(set_cs)
 global SetCSSS  ; void SetCSSS(uint16_t cs, uint16_t ss);
 SetCSSS:
     push rbp
@@ -67,9 +62,7 @@ SetCSSS:
     mov rsp, rbp
     pop rbp
     ret
-; #@@range_end(set_cs)
 
-; #@@range_begin(set_dsall)
 global SetDSAll  ; void SetDSAll(uint16_t value);
 SetDSAll:
     mov ds, di
@@ -77,21 +70,17 @@ SetDSAll:
     mov fs, di
     mov gs, di
     ret
-; #@@range_end(set_dsall)
 
-; #@@range_begin(set_cr3)
 global SetCR3  ; void SetCR3(uint64_t value);
 SetCR3:
     mov cr3, rdi
     ret
-; #@@range_end(set_cr3)
 
 global GetCR3  ; uint64_t GetCR3();
 GetCR3:
     mov rax, cr3
     ret
 
-; #@@range_begin(set_main_stack)
 extern kernel_main_stack
 extern KernelMainNewStack
 
@@ -102,7 +91,6 @@ KernelMain:
 .fin:
     hlt
     jmp .fin
-; #@@range_end(set_main_stack)
 
 global SwitchContext
 SwitchContext:  ; void SwitchContext(void* next_ctx, void* current_ctx);
@@ -143,7 +131,10 @@ SwitchContext:  ; void SwitchContext(void* next_ctx, void* current_ctx);
     mov [rsi + 0x38], rdx
 
     fxsave [rsi + 0xc0]
+    ; fall through to RestoreContext
 
+global RestoreContext
+RestoreContext:  ; void RestoreContext(void* task_context);
     ; Stack frame for iret
     push qword [rdi + 0x28] ; SS
     push qword [rdi + 0x70] ; RSP
@@ -179,3 +170,117 @@ SwitchContext:  ; void SwitchContext(void* next_ctx, void* current_ctx);
     mov rdi, [rdi + 0x60]
 
     o64 iret
+
+global CallApp
+CallApp:  ; void CallApp(int argc, char** argv, uint16_t cs, uint16_t ss, uint64_t rip, uint64_t rsp);
+    push rbp
+    mov rbp, rsp
+    push rcx  ; SS
+    push r9   ; RSP
+    push rdx  ; CS
+    push r8   ; RIP
+    o64 retf
+    ; Execution never reaches here even after the application terminates.
+
+extern LAPICTimerOnInterrupt
+; void LAPICTimerOnInterrupt(const TaskContext& ctx_stack);
+
+global IntHandlerLAPICTimer
+IntHandlerLAPICTimer:  ; void IntHandlerLAPICTimer();
+    push rbp
+    mov rbp, rsp
+
+    ; Construct TaskContext on the stack
+    sub rsp, 512
+    fxsave [rsp]
+    push r15
+    push r14
+    push r13
+    push r12
+    push r11
+    push r10
+    push r9
+    push r8
+    push qword [rbp]         ; RBP
+    push qword [rbp + 0x20]  ; RSP
+    push rsi
+    push rdi
+    push rdx
+    push rcx
+    push rbx
+    push rax
+
+    mov ax, fs
+    mov bx, gs
+    mov rcx, cr3
+
+    push rbx                 ; GS
+    push rax                 ; FS
+    push qword [rbp + 0x28]  ; SS
+    push qword [rbp + 0x10]  ; CS
+    push rbp                 ; reserved1
+    push qword [rbp + 0x18]  ; RFLAGS
+    push qword [rbp + 0x08]  ; RIP
+    push rcx                 ; CR3
+
+    mov rdi, rsp
+    call LAPICTimerOnInterrupt
+
+    add rsp, 8*8  ; Skip from CR3 to GS
+    pop rax
+    pop rbx
+    pop rcx
+    pop rdx
+    pop rdi
+    pop rsi
+    add rsp, 16   ; Skip RSP, RBP
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
+    pop r13
+    pop r14
+    pop r15
+    fxrstor [rsp]
+
+    mov rsp, rbp
+    pop rbp
+    iretq
+
+global LoadTR
+LoadTR:  ; void LoadTR(uint16_t sel);
+    ltr di
+    ret
+
+global WriteMSR
+WriteMSR:  ; void WriteMSR(uint32_t msr, uint64_t value);
+    mov rdx, rsi
+    shr rdx, 32
+    mov eax, esi
+    mov ecx, edi
+    wrmsr
+    ret
+
+extern syscall_table
+global SyscallEntry
+SyscallEntry:  ; void SyscallEntry(void);
+    push rbp
+    push rcx  ; original RIP
+    push r11  ; original RFLAGS
+
+    mov rcx, r10
+    and eax, 0x7fffffff
+    mov rbp, rsp
+    and rsp, 0xfffffffffffffff0
+
+    call [syscall_table + 8 * eax]
+    ; rbx, r12-r15 are callee-saved, so no need to save here
+    ; rax is for return value, so no need to save here
+
+    mov rsp, rbp
+
+    pop r11
+    pop rcx
+    pop rbp
+    o64 sysret

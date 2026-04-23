@@ -68,23 +68,24 @@ class TaskManager {
 
   TaskManager();
   Task& NewTask();
-  void SwitchTask(bool current_sleep = false);
+  void SwitchTask(const TaskContext& current_ctx);
 
   void Sleep(Task* task);
   Error Sleep(uint64_t id);
-  void Wakeup(Task* task, int level = -1);
-  Error Wakeup(uint64_t id, int level = -1);
+  void Wakeup(Task* task);
+  Error Wakeup(uint64_t id);
   Error SendMessage(uint64_t id, const Message& msg);
   Task& CurrentTask();
 
  private:
-  std::vector<std::unique_ptr<Task>> tasks_{};
+  std::vector<std::unique_ptr<Task>> tasks_;
   uint64_t latest_id_{0};
-  std::array<std::deque<Task*>, kMaxLevel + 1> running_{};
+  std::deque<Task*> running_[kMaxLevel + 1];
   int current_level_{kMaxLevel};
   bool level_changed_{false};
 
   void ChangeLevelRunning(Task* task, int level);
+  Task* RotateCurrentRunQueue(bool current_sleep);
 };
 // #@@range_end(taskmgr)
 

@@ -32,6 +32,7 @@
 #include "task.hpp"
 #include "terminal.hpp"
 #include "fat.hpp"
+#include "syscall.hpp"
 // #@@range_end(includes)
 
 int printk(const char* format, ...) {
@@ -96,7 +97,7 @@ void InputTextWindow(char c) {
 
   auto pos = []() { return Vector2D<int>{4 + 8*text_window_index, 6}; };
 
-  const int max_chars = (text_window->InnerSize().x - 8) / 8 - 1;
+  const int max_chars = (text_window->InnerSize().y - 8) / 8 - 1;
   if (c == '\b' && text_window_index > 0) {
     DrawTextCursor(false);
     --text_window_index;
@@ -143,6 +144,7 @@ extern "C" void KernelMainNewStack(
   InitializeSegmentation();
   InitializePaging();
   InitializeMemoryManager(memory_map);
+  InitializeTSS();
   InitializeInterrupt();
 
   fat::Initialize(volume_image);
@@ -162,8 +164,9 @@ extern "C" void KernelMainNewStack(
   timer_manager->AddTimer(Timer{kTimer05Sec, kTextboxCursorTimer});
   bool textbox_cursor_visible = false;
 
-  // #@@range_begin(init_tasks)
+  InitializeSyscall();
   InitializeTask();
+
   Task& main_task = task_manager->CurrentTask();
   // #@@range_begin(start_taskterm)
   const uint64_t task_terminal_id = task_manager->NewTask()
@@ -178,13 +181,9 @@ extern "C" void KernelMainNewStack(
   InitializeKeyboard();
   InitializeMouse();
 
-  // #@@range_begin(dump_volume)
-  // #@@range_end(dump_volume)
-
   char str[128];
 
   while (true) {
-  // #@@range_end(sti_last)
     __asm__("cli");
     const auto tick = timer_manager->CurrentTick();
     __asm__("sti");
@@ -194,7 +193,6 @@ extern "C" void KernelMainNewStack(
     WriteString(*main_window->InnerWriter(), {20, 4}, str, {0, 0, 0});
     layer_manager->Draw(main_window_layer_id);
 
-    // #@@range_begin(sleep_nomsg)
     __asm__("cli");
     auto msg = main_task.ReceiveMessage();
     if (!msg) {
@@ -202,16 +200,12 @@ extern "C" void KernelMainNewStack(
       __asm__("sti");
       continue;
     }
-    // #@@range_end(sleep_nomsg)
-
     __asm__("sti");
 
-    // #@@range_begin(process_event)
     switch (msg->type) {
     case Message::kInterruptXHCI:
       usb::xhci::ProcessEvents();
       break;
-    // #@@range_begin(send_timermsg)
     case Message::kTimerTimeout:
       if (msg->arg.timer.value == kTextboxCursorTimer) {
         __asm__("cli");
@@ -227,8 +221,6 @@ extern "C" void KernelMainNewStack(
         __asm__("sti");
       }
       break;
-    // #@@range_end(send_timermsg)
-    // #@@range_begin(main_keypush)
     case Message::kKeyPush:
       if (auto act = active_layer->GetActive(); act == text_window_layer_id) {
         InputTextWindow(msg->arg.keyboard.ascii);
@@ -247,20 +239,16 @@ extern "C" void KernelMainNewStack(
         }
       }
       break;
-    // #@@range_end(main_keypush)
-    // #@@range_begin(handle_layermsg)
     case Message::kLayer:
       ProcessLayerMessage(*msg);
       __asm__("cli");
       task_manager->SendMessage(msg->src_task, Message{Message::kLayerFinish});
       __asm__("sti");
       break;
-    // #@@range_end(handle_layermsg)
     default:
       Log(kError, "Unknown message type: %d\n", msg->type);
     }
   }
-  // #@@range_end(event_loop)
 }
 
 extern "C" void __cxa_pure_virtual() {
